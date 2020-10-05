@@ -9,4 +9,4 @@ Download bandband.py.open it in rhino python script editor
 - Python
 
 ### Libraries
-- Rhinoscrpit
+- Rhinoscript
