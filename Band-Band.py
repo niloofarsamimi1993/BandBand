@@ -1,62 +1,65 @@
 
-"""this scrpit generates three types of rectangular modules and a gird of points and it allows user to pick on of the module types and use it on the grid.
-it starts with picking a point on grid as a first corner of module and drawing it in a selectable direction.
-there is a toggle button at one side of grid which changes between level-mode and delete-mode and  allows user to change the level of modules or delete them."""
+"""this scrpit generates three types of rectangular modules and a gird of points and it allows the user to pick on one of the module types. Then they can place it on the grid.
+The process begins with selecting an start point then the second point to specify the shorter side of the module and finally the third point specify the longer side of the module
+or the module direction.
+there is a toggle button at one side of grid which changes between level-mode and delete-mode. it allows the user to change the level of modules between ground or first level
+or when set on delete them, to delete one drawn module by clicking on it."""
 #steps of generating module type-1: vertical rectangle(curve)from 3 points-->offset rectangle toward its center(curve)-->transform space between two rectangles into a surface-->extrude the surface in horizontal direction
 #steps of generating module type-2:get 4 points-->draw a polyline using points(U-shape)-->make a surface by extudeing the polyline horizontally-->get surface normals and analyse them-->offset the surface vetically  
 #steps of generating module type-3:same as type-2 
 import rhinoscriptsyntax as rs
 
-#Enables Osnap and Ortho
+#Enabling Osnap and Ortho
 if not rs.Ortho(): rs.Ortho(True)
 if not rs.Osnap(): rs.Osnap(True)
-#set ducument unit tolerance to 0.01
+#setting ducument unit tolerance to 0.01
 rs.UnitAbsoluteTolerance( 0.01 )
-#set perspective view to "shaded" mode
+#setting perspective view to "shaded" mode
 rs.ViewDisplayMode('Perspective', 'Shaded')
-#three variables contain dimentions of module
+#three variables to specify the  modules dimentions
 Width=1.19
 Length=5.95
 Height=3.09
 #this variable contains a code that changes the osnap mode 
 mode=134217728
-#this function allows user to create a module type-1
+#this function allows the user to create a module type-1
 def add_module1():
     rs.TextDotText(STATUS, text="Tap ouside the board to cancel selection")    
     #point1 is one of the lowest corner points of the module.
     Point1 = rs.GetPoint("Pick the first corner of rectangle")
     #changes osnap mode to zero-->snap doesn't detect anything so user is just allowed to pick a direction in otrho mode.
     rs.OsnapMode(0)
-    #if selected point is one of grid points user is allowed to select second point of rectangle.
-    #to check the point postion on the grid program calculates division remainder of point z-parameter value by a grid unit which is 1.19.this happens in other functions.
+    #if the selected point is one of grid points user is allowed to select the second point of rectangle.
+    #to check the point postion on the grid program calculates the remainder of point z-parameter divided by the grid unit which is 1.19.
+    #this happens in other functions as well.
     if (Point1[0]*100)%119==0 or int((Point1[0]*100)%119)==118:
         rs.TextDotText(STATUS, text="Draw")
-        #user picks point two in a specific distance from first point
+        #the user picks point two in a specific distance from first point
         Point2 = rs.GetPoint("Pick the second corner of rectangle", Point1,Length )
-        #adds point3 using point1 coordinates.point3 is a upper corner of rectangle 
+        #adds point3 using point1 coordinates. point3 is a upper corner of rectangle 
         Point3=(Point1[0],Point1[1],Height)
-        #draw a plane from 3 added points. 
-        base_plane=rs.PlaneFromPoints(Point3,Point1 ,Point2) 
-        #draw a rectangle using the plane with specific width and height
+        #drawing a plane from 3 added points. 
+        base_plane=rs.PlaneFromPoints(Point3,Point1,Point2) 
+        #drawing a rectangle using the plane with specific width and height
         rect=rs.AddRectangle(base_plane, Height, Length)
         #calculates center of the rectangle
         offset_point=((Point2[0]+Point3[0])/2,(Point2[1]+Point3[1])/2,(Point2[2]+Point3[2])/2)
         if rs.IsCurve(rect):
             #adds a new renctangle by offseting rectangle toward its center
             rect2=rs.OffsetCurve( rect,offset_point, 0.23 )
-        #adds surface using 2 added rectangles.    
+        #adding a surface using 2 generated rectangles.    
         if rect and rect2:surf=rs.AddPlanarSrf([rect,rect2])
-        #get a point connected to rectanle corner.the line between two points shows extrude direction
+        #getting a point connected to rectanle corner.the line between two points shows extrude direction
         Point4 = rs.GetPoint("pick extrude direction", Point2,Width )
         #this boolean changes to true when user picks a proper point
         ex_condition=False
-        #while point4 is not in a correct distance from point1 keep ask user to pick point4
+        #while point4 is not in a correct distance from point1 the code keeps asking the user to pick a correct point4
         while ex_condition==False:
             if rs.Distance(Point1,Point4)>=6.06 and rs.Distance(Point1,Point4)<=6.08:
                 ex_condition=True
-                #if the distance is correnct draw a line using point2 and point4
+                #if the distance is correnct it draws a line using point2 and point4
                 curve = rs.AddLine(Point2,Point4)
-                #extrude surface using added line as direction.result is the final object.
+                #extrude surface using added line as direction. the result is the final object.
                 result=rs.ExtrudeSurface(surf, curve)
                 
             else:
@@ -69,9 +72,10 @@ def add_module1():
         #return result which is final module
         return result
     else:
-        #if first point is not on grid function returns 0
+        #if the first point is not on grid function returns 0
         return 0
-#this function creates a module type-1  to help user pick a module type        
+#this function creates a module type-1  to help user pick a module type 
+
 def add_preview1(): 
     #add 3points as 3 corners of rectangle   
     point1 =(0,0,0)
@@ -105,11 +109,12 @@ def add_preview1():
     rs.AddTextDot("1",(-5,0,4))
     #returning created module
     return r
+
 #this function allows user to create a module type-2    
 def add_module2():
     #change status 
     rs.TextDotText(STATUS, text="Tap ouside the board to cancel selection")
-    #user pick the first point
+    #the user picks the first point
     Point1 = rs.GetPoint("Pick the first corner of rectangle")
     #change osnap to 0 so it doesn't detect any type of object
     rs.OsnapMode(0)
@@ -117,39 +122,39 @@ def add_module2():
     if (Point1[0]*100)%119==0 or int((Point1[0]*100)%119)==118:
         #when first point is correct user sees 'draw' in status bar
         rs.TextDotText(STATUS, text="Draw")
-        #user pickes second point
+        #the user picks the second point
         Point2 = rs.GetPoint("Pick the second corner of rectangle", Point1,Length )
-        #add point3 and point5 using point1 and point2 
+        #adding point3 and point5 using point1 and point2 
         Point3=(Point1[0],Point1[1],Height)
         Point5=(Point2[0],Point2[1],Height)
-        #draw a polyline using four points
+        #drawing a polyline using four points
         rect=rs.AddPolyline([Point1,Point3,Point5,Point2], replace_id=None)
         #user pick point4 
         Point4 = rs.GetPoint("pick extrude direction", Point2,Width )
-        #this boolean chnages to true if user pick point correcly
+        #this boolean changes to true if the user picks point correctly
         ex_condition=False
-        #ask user pick point4 until the picked point is in a correct distance from point1
+        #asking the user to pick point4 until the picked point is in a correct distance from point1
         while ex_condition==False:
-            #if the picked point is correct draw a line between point1 and point2
+            #if the  point is correctly picked, the code draws a line between point1 and point2
             if rs.Distance(Point1,Point4)>=6.06 and rs.Distance(Point1,Point4)<=6.08:
                 ex_condition=True
                 curve = rs.AddLine(Point2,Point4)
-                #extrude rectangle using adde point as direction
+                #extruding the rectangle using a direction made out of the two points
                 psrf=rs.ExtrudeCurve(rect, curve)       
             else:
                 Point4 = rs.GetPoint("pick extrude direction", Point2,Width )
-        #calculate center point of recntagle        
+        #calculating center point of the recntagle        
         center_point=((Point2[0]+Point3[0])/2,(Point2[1]+Point3[1])/2,(Point2[2]+Point3[2])/2)
-        #explode extruded surface to three surfaces and save them in a list
+        #exploding extruded surface to three surfaces and save them in a list
         srf_list=rs.ExplodePolysurfaces( psrf )
-        #find the horizontal surface and save its normal vector z parameter in normal_control variable
+        #finding the horizontal surface and save its normal vector z parameter in normal_control variable
         for i in srf_list:
             points =rs.SurfacePoints(i, return_all=True)
             normal = rs.SurfaceNormal(i, points[0])
             if normal[2]==1 or normal[2]==-1:
                 normal_control=normal[2]
                 break
-       #in next two for loops: if normel vector zparameter is positive or negative saved surfaces will extrude toward oposite direction
+       #in the next two for loops: if normel vector z parameter is positive or negative, saved surfaces will extrude toward oposite direction
         psrf_list=[]
         if normal_control==1:
             for i in srf_list:
@@ -159,7 +164,7 @@ def add_module2():
                 psrf_list.append(rs.OffsetSurface( i,0.23, tolerance=None, both_sides=False, create_solid=True))        
         #join extruded surfaces together.result is final object    
         result=rs.BooleanUnion(psrf_list, delete_input=True)
-        #delete generated objects except result
+        #deleting generated objects except the result
         rs.DeleteObject(psrf)
         rs.DeleteObject(curve)
         rs.DeleteObject(rect)
@@ -167,9 +172,10 @@ def add_module2():
     #return final object
         return result
     else:
-        #if first picked point is not correct function returns 0
+        #if the first picked point is not correct function returns 0
         return 0
 #this function creates a module type-2  to help user pick a module type
+############################## for now till here
 def add_preview2():
     #add 2 point as 2 corners of rectangle
     Point1 =(0,0,0)
